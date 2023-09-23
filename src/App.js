@@ -1,204 +1,188 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+
+import { MdDelete } from 'react-icons/md'
 import './App.css';
 
-class App extends React.Component{
-  constructor(props){
-    super(props);
-      this.state = {
-        todoList:[],
-        activeItem:{
-          id : null,
-          title : '',
-          completed : false,
-        },
-        editing:false,
-      }
-      this.fetchTasks = this.fetchTasks.bind(this)
-      this.handleChange = this.handleChange.bind(this)
-      this.handleSubmit = this.handleSubmit.bind(this)
-      this.getCookie = this.getCookie.bind(this)
-      this.startEdit = this.startEdit.bind(this)
-      this.deleteItem = this.deleteItem.bind(this)
-      this.strikeUnstrike = this.strikeUnstrike.bind(this)
+function App() {
+  const [todoList, setTodoList] = useState([]);
+  const [activeItem, setActiveItem] = useState({
+    id: null,
+    title: '',
+    completed: false,
+  });
+  const [editing, setEditing] = useState(false);
 
-  };
-
-  getCookie(name) {
+  const getCookie = (name) => {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + '=') {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
         }
+      }
     }
     return cookieValue;
-}
+  };
 
-  componentWillMount(){
-    this.fetchTasks()
-  }
+  useEffect(() => {
+    fetchTasks();
+  }, []);
 
-  fetchTasks(){
-    console.log('Fetching....')
+  const fetchTasks = () => {
+    console.log('Fetching....');
     fetch('http://127.0.0.1:8000/api/task-list/')
-    .then(Response => Response.json())
-    .then(data => 
-      this.setState({
-        todoList:data
-      })
-      )
-  }
+      .then((response) => response.json())
+      .then((data) => setTodoList(data));
+  };
 
-  handleChange(e){
-    var name = e.target.name
-    var value = e.target.value
-    console.log('Name:', name)
-    console.log('Value:', value)
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setActiveItem({
+      ...activeItem,
+      [name]: value,
+    });
+  };
 
-    this.setState({
-      activeItem:{
-        ...this.state.activeItem,
-        title:value
-      }
-    })
-  }
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('ITEM:', activeItem);
 
-  handleSubmit(e){
-    e.preventDefault()
-    console.log('ITEM:', this.state.activeItem)
+    const csrftoken = getCookie('csrftoken');
 
-    var csrftoken = this.getCookie('csrftoken')
+    let url = 'http://127.0.0.1:8000/api/task-create/';
 
-    var url = 'http://127.0.0.1:8000/api/task-create/'
-
-    if (this.state.editing === true){
-      url = `http://127.0.0.1:8000/api/task-update/${this.state.activeItem.id}/`
-      this.setState({
-        editing:false
-      })
+    if (editing === true) {
+      url = `http://127.0.0.1:8000/api/task-update/${activeItem.id}/`;
+      setEditing(false);
     }
 
     fetch(url, {
       method: 'POST',
-      headers:{
+      headers: {
         'Content-type': 'application/json',
         'X-CSRFToken': csrftoken,
       },
-      body:JSON.stringify(this.state.activeItem)
+      body: JSON.stringify(activeItem),
     })
-    .then((response) => {
-      this.fetchTasks()
-      this.setState({
-        activeItem:{
-          id : null,
-          title : '',
-          completed : false,
-        }
+      .then((response) => {
+        fetchTasks();
+        setActiveItem({
+          id: null,
+          title: '',
+          completed: false,
+        });
       })
-    })
-    .catch(function(error){
-      console.log('ERROR:', error)
-    })
+      .catch(function (error) {
+        console.log('ERROR:', error);
+      });
+  };
 
-  }
+  const startEdit = (task) => {
+    setActiveItem(task);
+    setEditing(true);
+  };
 
-  startEdit(task){
-    this.setState({
-      activeItem:task,
-      editing: true,
-    })
-  }
+  const deleteItem = (task) => {
+    const csrftoken = getCookie('csrftoken');
 
-  deleteItem(task){
-    var csrftoken = this.getCookie('csrftoken')
-
-    fetch(`http://127.0.0.1:8000/api/task-delete/${task.id}/` , {
+    fetch(`http://127.0.0.1:8000/api/task-delete/${task.id}/`, {
       method: 'DELETE',
-      headers:{
+      headers: {
         'Content-type': 'application/json',
         'X-CSRFToken': csrftoken,
-      }
+      },
     })
-    .then((response) => {
-      this.fetchTasks()
-    })
-  }
+      .then((response) => {
+        fetchTasks();
+      });
+  };
 
-  strikeUnstrike(task){
-    task.completed = !task.completed
-    var csrftoken = this.getCookie('csrftoken')
-    var url = `http://127.0.0.1:8000/api/task-update/${task.id}/`
+  const strikeUnstrike = (task) => {
+    task.completed = !task.completed;
+    const csrftoken = getCookie('csrftoken');
+    const url = `http://127.0.0.1:8000/api/task-update/${task.id}/`;
 
     fetch(url, {
       method: 'POST',
-      headers:{
+      headers: {
         'Content-type': 'application/json',
         'X-CSRFToken': csrftoken,
       },
-      body:JSON.stringify({'title':task.title, 'completed' : task.completed})
+      body: JSON.stringify({ title: task.title, completed: task.completed }),
     })
-    .then(() => {
-      this.fetchTasks()
-    })
+      .then(() => {
+        fetchTasks();
+      });
 
-    console.log('TASK:', task.completed)
+    console.log('TASK:', task.completed);
+  };
 
-
-  }
-
-
-  render(){
-    var tasks = this.state.todoList
-    var self = this
-    return(
-      <div className="container">
-          <div id="task-container">
-            <div id="form-wrapper">
-              <form onSubmit={this.handleSubmit} id="form">
-                <div className="flex-wrapper">
-                  <div style={{flex: 6}}>
-                    <input onChange={this.handleChange} className="form-control" id="title" value={this.state.activeItem.title} type="text" name="title" placeholder="Add task" />
-                  </div>
-                  <div style={{flex: 1}}>
-                    <input type="submit" id="submit" className="btn btn-warning" name="Add" />
-                  </div>
-                </div>
-              </form>
+  return (
+    <div className="container">
+      <div id="task-container">
+        <div id="form-wrapper">
+          <form onSubmit={handleSubmit} id="form">
+            <div className="flex-wrapper">
+              <div style={{ flex: 6 }}>
+                <input
+                  onChange={handleChange}
+                  className="form-control"
+                  id="title"
+                  value={activeItem.title}
+                  type="text"
+                  name="title"
+                  placeholder="Add task"
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <input
+                  type="submit"
+                  id="submit"
+                  className="btn"
+                  name="Add"
+                />
+              </div>
             </div>
-            <div id="list-wrapper">
-              {tasks.map(function(task, index){
-                return(
-                  <div key={index} className="task-wrapper flex-wrapper" >
-                    <div onClick={() => self.strikeUnstrike(task)} style={{flex: 7}}>
-
-                      {task.completed === false ? (
-                        <span>{task.title}</span>
-                      ) : (
-                        <strike>{task.title}</strike>
-                      )}
-                      
-                    </div>
-                    
-                    <div style={{flex: 1}}>
-                    <button onClick={() => self.startEdit(task)} className="btn btn-sm btn-outline-info">Edit</button>
-                    </div>
-
-                    <div style={{flex: 1}}>
-                    <button onClick={() => self.deleteItem(task)} className="btn btn-sm btn-outline-dark">-</button>
-                    </div>
-                  </div>
-                )
-              })}
+          </form>
+        </div>
+        <div id="list-wrapper">
+          {todoList.map((task, index) => (
+            <div key={index} className="task-wrapper flex-wrapper">
+              <div
+                onClick={() => strikeUnstrike(task)}
+                style={{ flex: 7 }}
+              >
+                {task.completed === false ? (
+                  <span>{task.title}</span>
+                ) : (
+                  <strike>{task.title}</strike>
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
+                <button
+                  onClick={() => startEdit(task)}
+                  className="btn btn-sm btn-secondary"
+                >
+                  Edit
+                </button>
+              </div>
+              <div style={{ flex: 1 }}>
+                <button
+                  onClick={() => deleteItem(task)}
+                  className="btn btn-sm btn-danger"
+                >
+                  <MdDelete />
+                </button>
+              </div>
             </div>
-          </div>
+          ))}
+        </div>
       </div>
-    )
-  }
+    </div>
+  );
 }
 
 export default App;
