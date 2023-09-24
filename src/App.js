@@ -164,7 +164,7 @@ function App() {
               <div style={{ flex: 1 }}>
                 <button
                   onClick={() => startEdit(task)}
-                  className="btn btn-sm btn-secondary"
+                  className="btn btn-md btn-warning"
                 >
                   Edit
                 </button>
@@ -172,7 +172,7 @@ function App() {
               <div style={{ flex: 1 }}>
                 <button
                   onClick={() => deleteItem(task)}
-                  className="btn btn-sm btn-danger"
+                  className="btn btn-md btn-danger"
                 >
                   <MdDelete />
                 </button>
