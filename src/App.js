@@ -156,9 +156,9 @@ function App() {
                 style={{ flex: 7 }}
               >
                 {task.completed === false ? (
-                  <span>{task.title}</span>
+                  <span>{task.title.charAt(0).toUpperCase() + task.title.slice(1)}</span>
                 ) : (
-                  <strike>{task.title}</strike>
+                  <strike>{task.title.charAt(0).toUpperCase() + task.title.slice(1)}</strike>
                 )}
               </div>
               <div style={{ flex: 1 }}>
