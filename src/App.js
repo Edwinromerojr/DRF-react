@@ -155,14 +155,16 @@ function App() {
                 onClick={() => strikeUnstrike(task)}
                 style={{ flex: 7 }}
               >
-                <span
-                  style={{
+                {task.completed === false ? (
+                  <span>{task.title.charAt(0).toUpperCase() + task.title.slice(1)}</span>
+                ) : (
+                <strike style={{
                     textDecoration: task.completed ? 'line-through #09ff00' : 'none',
                     textDecorationThickness: '3px'
-                  }}
-                >
-                  {task.title.charAt(0).toUpperCase() + task.title.slice(1)}
-                </span>
+                  }}>
+                    {task.title.charAt(0).toUpperCase() + task.title.slice(1)}
+                  </strike>
+                )}
               </div>
               <div style={{ flex: 1 }}>
                 <button
